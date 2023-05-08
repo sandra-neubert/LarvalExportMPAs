@@ -1,4 +1,4 @@
-# Larval Export MPAs
+# Larval Export from MPAs
 
 This repository provides the code to the study "Investigating effects of larval export from marine protected areas on fisheries using a global bioeconomic size-spectrum model". Briefly, we couple Lagrangian particle tracking to simulate passive larval movement with the global, spatially-resolved bioeconomic trophic size-spectrum model BOATS to estimate fish biomass and harvest. We then explore a 30✕30 MPA scenario that maximises economic benefit to test how much incorporating larval movement in a marine ecosystem model could offset the projected loss to fisheries upon MPA implementation. 
 <br>
