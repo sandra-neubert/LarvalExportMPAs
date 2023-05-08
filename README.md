@@ -1,7 +1,9 @@
 # Larval Export MPAs
 
-This repository provides the code to the study "Investigating effects of larval export from marine protected areas on fisheries using a global bioeconomic size-spectrum model". The code can be divided into three main sections:
+This repository provides the code to the study "Investigating effects of larval export from marine protected areas on fisheries using a global bioeconomic size-spectrum model". Briefly, we couple Lagrangian particle tracking to simulate passive larval movement with the global, spatially-resolved bioeconomic trophic size-spectrum model BOATS to estimate fish biomass and harvest. We then explore an 30✕30 MPA scenario that maximises economic benefit to test how much incorporating larval movement in a marine ecosystem model could offset the projected loss to fisheries upon MPA implementation. 
 <br>
-* **Particle Tracking:** Particle tracking is done using Parcels (link to parcels) and can be found in Analysis/Movement. 
-* **Global bioeconomic modelling simulations:**
+The code can be divided into three main sections:
+<br>
+* **Particle Tracking:** Particle tracking is done using [Parcels](https://oceanparcels.org/#whatisparcels) by [Delandmeter and van Sebille, 2019](https://www.geosci-model-dev.net/12/3571/2019/gmd-12-3571-2019.html) is performed with Analysis/Movement/PythonScripts/HPCParticleTrackingScript.py. Running global particle tracking as well as preprocessing for particle tracking requires a high perfomance computer. [OFES](https://doi.org/10.17596/0002029)
+* **Global bioeconomic modelling simulations:** We used the publicly available BiOeconomic mArine Trophic Size-spectrum model ([BOATS](https://github.com/obeg-boats)) by Carozza et al. ([2016](https://earthsystemdynamics.org/wp-content/uploads/2018/05/Carozza-GMD-2016-BOATS.pdf), [2017](https://earthsystemdynamics.org/wp-content/uploads/2018/05/Carozza-PLoS-2017-BOATS.pdf)) to simulate whether egg/larval movement can offset lost fishing following MPA implementation. The version of BOATS including egg/larval movement can be found in Analysis/BOATS/sneubert-boats_v1 with instructions on how to run the model in the doc folder. As we ran the model with daily time steps, we also had to run BOATS on a high performance computer.
 * **Analysis of simulations:**
