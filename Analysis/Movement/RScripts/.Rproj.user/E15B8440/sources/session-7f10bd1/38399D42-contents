@@ -1,0 +1,214 @@
+#Sandra Neubert
+#Create Probability Matrices based on particle tracking data globally 
+#Jase adapted this script later to run it parallel on the HPC
+
+library(sf)
+library(tidyverse)
+library(tidync)
+library(ncdf4)
+library(lubridate)
+
+###### Set paths ######
+Data_path <- "../Data"
+Figure_path <- "../Figures"
+BoatsPath <- file.path(Data_path, "maskGlobal.csv")#dont use just ocean cells, filter the cells later (takes longer though?)
+
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+###### Functions #########
+convert_time <- function(particles, particles.info) { #Function from Dan Hewitt
+  
+  # particles is the actual data
+  # particles.info is the link to the netcdf
+  
+  # extract the time.origin
+  time.origin <- ymd(str_sub(particles.info$var$time$units, 15, 24))
+  
+  # convert time to a readable format (i.e. not in seconds since...)
+  particles <- particles %>%
+    mutate(date = time.origin + duration(time, units = "seconds"))
+}
+
+
+get_Indices <- function(BOATSCentroid, BOATSdf) { #BOATSCentroid is index number
+  #dont need to account for indexing >74.9 or <-75 bc no prob of going there anyway
+  
+  currBOATS <- BOATSdf[BOATSCentroid,] %>% dplyr::select(-ind) #get centroid boats info
+  
+  
+  cellN <- currBOATS %>% dplyr::mutate(lat = lat + 1)
+  cellS <- currBOATS %>% dplyr::mutate(lat = lat - 1)
+  if (currBOATS$lon == 179.5 ) { 
+    cellW <- currBOATS %>% dplyr::mutate(lon = lon - 1)
+    cellE <- currBOATS %>% dplyr::mutate(lon = -179.5)
+    cellNW <- cellN %>% dplyr::mutate(lon = lon - 1) 
+    cellNE <- cellN %>% dplyr::mutate(lon = -179.5)
+    cellSW <- cellS %>% dplyr::mutate(lon = lon - 1)
+    cellSE <- cellS %>% dplyr::mutate(lon = -179.5)
+  } else if (currBOATS$lon == -179.5 ){
+    cellW <- currBOATS %>% dplyr::mutate(lon = 179.5)
+    cellE <- currBOATS %>% dplyr::mutate(lon = lon + 1)
+    cellNW <- cellN %>% dplyr::mutate(lon = 179.5 ) 
+    cellNE <- cellN %>% dplyr::mutate(lon = lon + 1)
+    cellSW <- cellS %>% dplyr::mutate(lon = 179.5 )
+    cellSE <- cellS %>% dplyr::mutate(lon = lon + 1)
+  } else {
+    cellW <- currBOATS %>% dplyr::mutate(lon = lon - 1)
+    cellE <- currBOATS %>% dplyr::mutate(lon = lon + 1)
+    cellNW <- cellN %>% dplyr::mutate(lon = lon - 1) 
+    cellNE <- cellN %>% dplyr::mutate(lon = lon + 1)
+    cellSW <- cellS %>% dplyr::mutate(lon = lon - 1)
+    cellSE <- cellS %>% dplyr::mutate(lon = lon + 1)
+  }
+  neighbours <- list(cellN, cellS, cellW, cellE, cellNW, cellNE, cellSW, cellSE)
+  
+  listNeigh <- list(BOATSCentroid)
+  for (i in 1:length(neighbours)) {
+    neighInd <- which((BOATSdf$lon == neighbours[[i]]$lon) & (BOATSdf$lat == neighbours[[i]]$lat))[1]
+    listNeigh <- append(listNeigh, neighInd)
+  }
+  return(listNeigh)
+}
+
+
+create_ProbMatrix <- function(BOATSdf, BOATSsf, parcelsDataUsed, whichMonth) {
+  #input
+  # BOATSdf: df of all BOATS centroids 
+  # BOATSsf: sf object of BOATSdf to do spatial analysis
+  # parcelsDataUsed: Particle Tracking data
+  # whichMonth: The month the created matrix is giving probabilities for based on the release times of particles
+  
+  #output
+  # writes monthly probability Matrix
+  
+  #get start and end particle centroid BOATS
+  startParticles <- parcelsDataUsed %>%
+    dplyr::filter(time == 0) %>%
+    dplyr::select(lon, lat)
+  
+  StartLoc <- startParticles %>%
+    sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+  
+  endParticles <- parcelsDataUsed %>%
+    dplyr::filter(time == 86400) %>% #end point should never be in a different month because we release in the middle of each month and dont track for that long
+    dplyr::select(lon, lat)
+  
+  #still: sanity check
+  if (nrow(startParticles) != nrow(endParticles)) {
+    print("Particles don't end in same month as they start. Check PT data.")
+  }
+  
+  #get what boats cell particles started in
+  StartCentr <- sf::st_nearest_feature(StartLoc, BOATSsf) %>% data.frame() %>% dplyr::rename(Start = ".")
+
+  uniqueStartCentr <- sort(unique(StartCentr$Start)) #how many unique start centroids? 
+  
+  #init probs calculation
+  #TotalDF <- data.frame() #delete later, only to get an idea how many we ususally divide by
+  LonLatDf <- data.frame() #save lon lat info for calculated probs
+  ProbsDf <- data.frame() #save probs
+  for (i in 1:length(uniqueStartCentr)) { #loop through all starting cells in boats
+    MoveInd <- get_Indices(uniqueStartCentr[i], BOATSdf) #get neighbour information
+    
+    LonLatDf <- rbind(LonLatDf, data.frame(st_coordinates(BOATSsf[uniqueStartCentr[i],]))) #lon lat for current starting cell
+    BOATSReduced <- BOATSsf[unlist(MoveInd), ] #only get 8 neighboring cells and current cell to reduce spatial analysis load
+    
+    indStart <- which(StartCentr$Start %in% uniqueStartCentr[i]) #get index of starting centroid
+    
+    EndLoc <- endParticles[indStart,] %>%
+      sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+    
+    #get nearest neigh of end location
+    EndCentr <- sf::st_nearest_feature(EndLoc, BOATSReduced) %>% data.frame() %>% dplyr::rename(End = ".")
+    
+    #get count how many times particles ended up in each of the end cells
+    countWhereTo <- as.data.frame(table(EndCentr))
+    
+    #and sum that to get what to divide by when calculating probs (ideally 100: close to coast sometimes less)
+    Total <- sum(countWhereTo$Freq)
+    #TotalDF <- rbind(TotalDF, data.frame(Total))
+    
+    #calculate probs
+    probs <- numeric(9) #init with all 0 (so when particles never moved to a specific neighbour, that prob stays at 0)
+    for (j in 1:length(MoveInd)){ #length(testInd)
+      if (j %in% countWhereTo$End) {
+        dirNow <- match(j, countWhereTo$End)
+        probs[j] <- (countWhereTo[dirNow,]$Freq)/Total #probs calculation
+      } else {
+        probs <- probs
+      }
+      
+    }
+    ProbsDf <- rbind(ProbsDf, as.data.frame(t(probs))) #save probs
+  }
+  
+  names(ProbsDf) <- c("Stay", "N", "S", "W", "E", "NW", "NE", "SW", "SE")
+  ProbsDf <- cbind(ProbsDf, LonLatDf) %>%
+    dplyr::rename(lon = X, lat = Y)
+  
+  if (whichMonth < 10){ #easiest way to ensure right order in MATLAB
+    currentMonth <- paste0("0", whichMonth)
+  } else {
+    currentMonth <- whichMonth
+  }
+  
+  #save probability matrix as csv to load into matlab
+  write.csv(ProbsDf, file.path(Data_path, paste0("ProbMatrixGlobal", currentMonth, ".csv")), row.names=FALSE)
+  
+  return(ProbsDf) #for now, can be removed later when function working
+
+}
+
+##### Load BOATS Data #####
+BOATSdf <-  read_csv(BoatsPath, col_names = c("lon", "lat", "ind")) %>%
+  dplyr::filter((lat <=75)&(lat >(-75))) #OFES only near-global
+
+BOATSsf <- BOATSdf %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) 
+
+##### Calculate Prob Matrices ######
+uniqueMonths <- Sys.glob(file.path(Data_path, "1950*.nc"))#just to get number of months, should be 12 later anyway
+
+for (i in 1:length(uniqueMonths)) { #loop through months --> probably where things should be changed for HPC? 
+  parcelsDataMonth <-   Sys.glob(file.path(Data_path, paste0("*",i,"-ParcelsOutput.nc"))) #get all files that exist for a month (should be length = 69 for 69 years of OFES data)
+  
+  trajectoryCount <- 1 #otherwise problems with 0 later
+  for (j in 1:length(parcelsDataMonth)) { #loop through years
+    ## load parcels data
+    particles.info <- nc_open(parcelsDataMonth[j])
+    
+    parcelsData <- hyper_tibble(parcelsDataMonth[j])%>% 
+      convert_time(particles.info) %>%
+      #dplyr::mutate(Month = month(as.POSIXlt(.data$date, format="%Y-%m-%d"))) %>% #to select by month later 
+      dplyr::filter(age == 0| age == 86400) %>% #filter for start and after 24h
+      dplyr::mutate(trajectoryID = trajectory + trajectoryCount) %>%
+      dplyr::select(-age, -z)
+    
+    ### some particles are on land (mostly on ice in Antarctica) --> no current information: only have start but not end observation: get rid of those
+    onLandData <- data.frame(table(parcelsData$trajectoryID)) %>% 
+      dplyr::filter(Freq != 2) #all that have fewer than 2 observations (start and end location)
+    
+    onLandData <- onLandData$Var1
+    
+    parcelsData <- parcelsData %>%
+      dplyr::filter(!trajectoryID %in% onLandData) #delete trajectories with fewer than 2 obs (bit hacky but works)
+    ####
+    
+    #to avoid getting some trajectory number twice and messing up data: assign new ID
+    trajectoryCount <- max(parcelsData$trajectoryID)
+    
+    # combine different year data frames of same month
+    if (j == 1) {
+      combParcelsData <- parcelsData
+    } else {
+      combParcelsData <- rbind(combParcelsData, parcelsData)
+    }
+    print(paste0("Month: ", i, ", Year: ", j))
+  }
+  
+  #create probability matrix made from combined data
+  ProbMat <- create_ProbMatrix(BOATSdf, BOATSsf, combParcelsData, i)
+  
+  print(paste0("Created matrix for month ", i))
+}
+

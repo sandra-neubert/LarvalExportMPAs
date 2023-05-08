@@ -1,0 +1,57 @@
+ggDist <- visreg(m4, xvar = "distance", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0, 0.035)) +
+  labs(x="Distance to MPA (km)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+    axis.title = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.text.x = element_text(size = 12, colour = "black"))
+
+ggNPP <- visreg(m4, xvar = "NPP", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0, 0.035)) +
+  labs(x= parse(text='NPP~(nmolC~m^-2*~s^-1)'), 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+ggMI <- visreg(m4, xvar = "moveInd", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0.001, 0.006)) +
+  labs(x= "Movement Index (%)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+ggLat <- visreg(m4, xvar = "lat", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0.00025, 0.0023)) +
+  labs(x= "Latitude (°)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+library(patchwork)
+pComb <- ((ggDist + ggNPP) / (ggMI + ggLat)) +
+  plot_annotation(tag_levels = "A") 
+
+ggsave(plot = pComb,
+       filename = file.path(Figure_path, paste0("combGLM.png")),
+       width = 10, height = 8, dpi = 400) 
+
+
+
+visreg(m4, xvar = "lat", gg = FALSE, scale = "response", partial = FALSE) 
+visreg(m4, xvar = "moveInd", gg = FALSE, scale = "response", partial = FALSE) 
+visreg(m4, xvar = "NPP", gg = FALSE, scale = "response", partial = FALSE)

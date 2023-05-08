@@ -1,0 +1,21 @@
+test1 <- parcelsData %>% dplyr::filter(lon > 177& lon < 182) %>% dplyr::filter(lat > -3 & lat < -1)
+
+
+### some particles are on land (mostly on ice in Antarctice) --> no current information: only have start but not end observation: get rid of those
+onLandData <- data.frame(table(test1$trajectoryID)) %>% 
+  dplyr::filter(Freq != 2) #all that have fewer than 2 observations (start and end location)
+
+onLandData <- onLandData$Var1
+
+test1 <-test1 %>%
+  dplyr::filter(!trajectoryID %in% onLandData)
+
+test3 <- test1 %>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon))
+
+parcelsDataUsed <- test3
+
+
+ProbMatTest <- create_ProbMatrix(BOATSdf, BOATSsf, test3, i)
+

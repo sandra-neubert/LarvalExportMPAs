@@ -1,0 +1,56 @@
+library(sf)
+library(tidyverse)
+library(tidync)
+library(ncdf4)
+library(lubridate)
+
+
+Data_path <- "../Data"
+
+###### Functions #########
+convert_time <- function(particles, particles.info) { #Function from Dan Hewitt
+  
+  # particles is the actual data
+  # particles.info is the link to the netcdf
+  
+  # extract the time.origin
+  time.origin <- ymd(str_sub(particles.info$var$time$units, 15, 24))
+  
+  # convert time to a readable format (i.e. not in seconds since...)
+  particles <- particles %>%
+    mutate(date = time.origin + duration(time, units = "seconds"))
+}
+
+#write month loop around this
+parcelsDataMonth <-   Sys.glob(file.path(Data_path, "*1-ParcelsOutput.nc"))
+
+trajectoryCount <- 1 #otherwise problems with 0 later
+for (j in 1:length(parcelsDataMonth)) { #length(parcelsDataMonth)
+  particles.info <- nc_open(parcelsDataMonth[j])
+  
+  parcelsData <- hyper_tibble(parcelsDataMonth[j])%>% 
+    convert_time(particles.info) %>%
+    dplyr::mutate(Month = month(as.POSIXlt(.data$date, format="%Y-%m-%d"))) %>% #to select by month later 
+    dplyr::filter(age == 0| age == 86400) %>%
+    dplyr::mutate(trajectoryID = trajectory + trajectoryCount) %>%
+    dplyr::select(-age, -z)
+  
+  onLandData <- data.frame(table(parcelsData$trajectoryID)) %>% 
+    dplyr::filter(Freq != 2)
+  
+  onLandData <- onLandData$Var1
+  
+  parcelsData <- parcelsData %>%
+    dplyr::filter(!trajectoryID %in% onLandData)
+  
+  trajectoryCount <- max(parcelsData1$trajectory)
+  
+  if (j == 1) {
+    combParcelsData <- parcelsData
+  } else {
+    combParcelsData <- rbind(combParcelsData, parcelsData)
+  }
+}
+
+ProbMat <- create_ProbMatrix(BOATSdf, BOATSsf, parcelsData1, 2)
+print(paste0("Creating matrix for month ", uniqueMonths[i]))

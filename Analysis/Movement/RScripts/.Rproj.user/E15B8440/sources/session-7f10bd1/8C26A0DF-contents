@@ -1,0 +1,19 @@
+library(tidyverse)
+library(visreg)
+library(splines)
+
+Figure_path <- "../Figures"
+Data_path <- "../Data"
+
+GLMDataNoMPAs <- readRDS(file.path(Data_path, "LarvExp", "GLMDataNoMPAs.rds")) #%>%
+                           #dplyr::filter(additHarv >= 0)
+
+
+# model1 <- glm(additHarv ~  moveInd + distance + npp + bs(temp) + bs(lon) + bs(lat), data = GLMData, quasipoisson)
+# 1-(model1$deviance/model1$null.deviance)
+# # 
+# par(mfrow = c(2,2))
+# plot(model1)
+# 
+# par(mfrow = c(3,2))
+# visreg(model1, scale = "response", partial = FALSE)

@@ -1,0 +1,119 @@
+# testMoveInd <- MoveInd %>%
+#   sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) %>%
+#   dplyr::filter(moveInd < 1)
+#   
+# # ggplot(data = testMoveInd) +
+# #   geom_sf(aes(color = moveInd), size = 1.5)
+# 
+# testLarvExp <- LarvExp %>%
+#   sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) #%>%
+  
+  #dplyr::filter(moveInd < 1)
+#testLarvExp$larvExp <- log(testLarvExp$larvExp)
+# 
+# ggplot(data = testLarvExp) +
+#   geom_sf(aes(color = larvExp), size = 1.5)
+
+mpa_scenarios <- read_csv("~/Github/ThesisSandra/Analysis/BOATS/sneubert-boats_v1/input/mpaWaldron/mpasWaldronNew.csv",
+                          col_names = c("Lon", "lat", "CurrentMPAs", "Cheapest_Half", 
+                                        "Cheapest_Full", "Top30_Half", "Top30_Full")) %>%
+  # dplyr::select(Lon, Lat, Top30_Full)%>%
+  dplyr::mutate(lon = case_when(Lon > 180 ~ Lon -360,
+                                Lon < 180 ~ Lon)) %>%
+  dplyr::filter((lat <=75)&(lat >(-75))) %>%
+  #sf::st_as_sf(coords = c("Lon", "Lat"), crs = LatLon) %>%
+  replace(is.na(.), 2)
+
+test2MoveInd <- MoveInd %>%
+  dplyr::mutate(mpa = mpa_scenarios$Cheapest_Full) %>%
+  dplyr::mutate(moveInd2 = case_when(mpa == 1 ~ 0,
+                                mpa != 1 ~ moveInd)) %>%
+  #sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) %>%
+  dplyr::filter(moveInd2 < 1)
+
+# ggplot(data = test2MoveInd) +
+#   geom_sf(aes(color = moveInd2), size = 1.5)
+
+expMove <- merge(test2MoveInd , LarvExp, by=c("lon","lat")) %>%
+  #dplyr::filter(moveInd2 < quantile(moveInd2, 0.99, 'na.rm' = TRUE)) %>%
+  dplyr::filter(larvExp < quantile(larvExp, 0.99, 'na.rm' = TRUE)) %>%
+  dplyr::filter(larvExp >0)
+
+
+#plot(expMove$moveInd2, expMove$larvExp)
+
+ggMove <- ggplot(expMove, aes(x = moveInd2, y = larvExp)) + 
+            geom_point() +
+            geom_smooth(method = "lm", col = "blue")+
+            labs(x="Movement Index (%)", 
+                 y=expression(paste("Larval Export (twB ", m^{-2}, " ", yr^{-1},")")),#"Larval Export (t m^-^2)",
+                 colour = " ") +
+            theme_bw() +
+            theme(
+              plot.title = element_text(size=12, colour = "black"),
+              legend.background = element_blank(),
+              legend.text = element_text(size = 12, colour = "black"),
+              legend.title = element_text(size = 12, colour = "black"),
+              axis.title = element_text(size = 12, colour = "black"),
+              axis.text.y = element_text(size = 12, colour = "black"),
+              axis.text.x = element_text(size = 12, colour = "black"))
+
+#lmRes <- lm(expMove$larvExp ~ expMove$moveInd2)
+
+# library(ggpubr)
+# ggscatter(expMove, x = "moveInd2", y = "larvExp", add = "reg.line") +
+#   stat_cor(label.x = 0.5, label.y = 0.0000000001) #+
+#  # stat_regline_equation(label.x = 0.5, label.y = 0.00000000008)
+
+ggsave(plot = ggMove,
+       filename = file.path(Figure_path, paste0("MoveIndvsLarvEx.png")),
+       width = 10, height = 8, dpi = 400) 
+##############
+BOATSCheapestDist <- BOATSsfTest %>%
+  mutate(lon = unlist(map(.data$geometry,1)),
+         lat = unlist(map(.data$geometry,2))) %>%
+  sf::st_drop_geometry()
+
+Dist <- merge(BOATSCheapestDist, mpa_scenarios, by=c("lon","lat")) %>%
+  dplyr::mutate(mpa = Cheapest_Full) %>%
+  dplyr::mutate(distance2 = case_when(mpa == 1 ~ 0,
+                                     mpa != 1 ~ distance)) %>%
+  dplyr::select(distance2, lon, lat)
+
+expDist <- merge(Dist , LarvExp, by=c("lon","lat")) %>%
+  #dplyr::filter(moveInd2 < quantile(moveInd2, 0.99, 'na.rm' = TRUE)) %>%
+  dplyr::filter(larvExp < quantile(larvExp, 0.99, 'na.rm' = TRUE)) %>%
+  dplyr::filter(larvExp >0) %>%
+  dplyr::filter(distance2 >0)
+
+ggDist <- ggplot(expDist, aes(x = distance2, y = larvExp)) + 
+            geom_point() +
+            geom_smooth(method = "lm", col = "blue")+
+            labs(x="Distance to MPA (km)", 
+                 y=expression(paste("Larval Export (twB ", m^{-2}, " ", yr^{-1},")")),
+                 colour = " ") +
+            theme_bw() +
+            theme(
+              plot.title = element_text(size=12, colour = "black"),
+              legend.background = element_blank(),
+              legend.text = element_text(size = 12, colour = "black"),
+              legend.title = element_text(size = 12, colour = "black"),
+              axis.title = element_text(size = 12, colour = "black"),
+              axis.text.y = element_text(size = 12, colour = "black"),
+              axis.text.x = element_text(size = 12, colour = "black"))
+
+#lmRes <- lm(expDist$larvExp ~ expDist$distance2)
+
+ggsave(plot = ggDist,
+       filename = file.path(Figure_path, paste0("DistvsLarvEx.png")),
+       width = 10, height = 8, dpi = 400) 
+
+library(patchwork)
+
+pComb <- ggMove + ggDist +
+ # plot_layout(guides = "collect", widths = c(1, 1, 1)) +
+  plot_annotation(tag_levels = "A") 
+
+ggsave(plot = pComb,
+       filename = file.path(Figure_path, paste0("combinedLRegressionPlots.png")),
+       width = 12, height = 5, dpi = 400) 

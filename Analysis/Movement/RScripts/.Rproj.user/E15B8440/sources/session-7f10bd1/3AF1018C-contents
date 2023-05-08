@@ -1,0 +1,164 @@
+# Analysis for Sandra
+# Linear model of larval movement
+# 21/4/23
+
+library(tidyverse)
+library(visreg)
+library(splines)
+library(mgcv)
+
+Figure_path <- "../Figures"
+Data_path <- "../Data"
+# Units for additHarv are tonnes/m2/yr for year 237
+
+dat <- readRDS(file.path(Data_path, "LarvExp", "GLMDataNoMPAs.rds")) %>% 
+  mutate(Harvest = additHarv * 10^9, # convert mg/m2/yr
+         # Harvest = replace(Harvest, Harvest < 0, 0) %>% 
+         Harvest = replace(Harvest, Harvest < 10^-3, 10^-3), 
+         NPP = npp*10^6, 
+         NPP = replace(NPP, NPP < 10^-3, 10^-3), 
+         NPP = replace(NPP, NPP > 3*10^3, 3*10^3))
+      
+# npp = replace(npp, npp > 0.003, 0.003)) # Few high values
+
+range(dat$Harvest)
+range(dat$NPP)
+
+#### Modelling ####
+m1 <- lm(Harvest ~ moveInd, dat)
+summary(m1)
+par(mfrow = c(2,2))
+plot(m1)
+
+graphics.off()
+visreg(m1, gg = FALSE, partial = FALSE)
+
+DF <- 4
+m2 <- lm(log10(Harvest) ~ ns(distance, DF) + ns(moveInd, DF) +
+           ns(lat, DF) + ns(lon, DF) + ns(npp, DF) + ns(temp, DF), dat)
+summary(m2)
+par(mfrow = c(2,2))
+plot(m2)
+
+graphics.off()
+visreg(m2, xvar = "distance", gg = FALSE, partial = FALSE)
+visreg(m2, xvar = "lat", gg = FALSE, partial = FALSE)
+visreg(m2, xvar = "moveInd", gg = FALSE, partial = FALSE)
+visreg(m2, xvar = "npp", gg = FALSE, partial = FALSE)
+visreg(m2, xvar = "temp", gg = FALSE, partial = FALSE)
+visreg(m2, xvar = "lon", gg = FALSE, partial = FALSE)
+drop1(m2) # Suggests keeping all of them but lon and temp are very weak
+
+DF <- 4
+m3 <- glm(Harvest ~ ns(moveInd, DF) + ns(distance, DF) + 
+            ns(lat, DF) + ns(lon, DF) +
+            ns(NPP, DF) + ns(temp, DF), family = Gamma(link = "log"), dat)
+summary(m3)
+with(summary(m3), 1 - deviance/null.deviance)
+drop1(m3)
+# Note that lon and temp are very weak variables
+
+visreg(m3, xvar = "distance", gg = FALSE, partial = FALSE) 
+visreg(m3, xvar = "lat", gg = FALSE, partial = FALSE) 
+visreg(m3, xvar = "moveInd", gg = FALSE, partial = FALSE) 
+visreg(m3, xvar = "temp", gg = FALSE, partial = FALSE) 
+visreg(m3, xvar = "NPP", gg = FALSE, partial = FALSE)
+visreg(m3, xvar = "lon", gg = FALSE, partial = FALSE) 
+
+
+DF <- 4
+m4 <- glm(Harvest ~ ns(moveInd, DF) + ns(distance, DF) + 
+            ns(lat, DF) +
+            ns(NPP, DF), family = Gamma(link = "log"), dat)
+
+summary(m4)
+library(report)
+report(m4)
+report(m4) %>% summary()
+resultsTable <- report_table(m4)
+with(summary(m4), 1 - deviance/null.deviance)
+drop1(m4)
+
+results_df <- data.frame(summary.glm(m4)$coefficients)
+results_df <- cbind(Predictor = rownames(results_df), results_df)
+rownames(results_df) <- 1:nrow(results_df)
+library(openxlsx)
+write.xlsx(results_df, "m4GLMCoefficients.xlsx")
+#write.csv(results_df, "m4GLMCoefficients.csv")
+
+# visreg(m4, xvar = "distance", gg = FALSE, partial = TRUE) 
+# visreg(m4, xvar = "lat", gg = FALSE, partial = TRUE) 
+# visreg(m4, xvar = "moveInd", gg = FALSE, partial = TRUE) 
+# visreg(m4, xvar = "NPP", gg = FALSE, partial = TRUE)
+# 
+# graphics.off()
+# par(mar = c(6, 6, 2, 0.5), mgp = c(3.5, 1, 0), mfrow = c(2,2))
+# visreg(m4,  main="A.", xvar = "distance", gg = FALSE, partial = FALSE, scale = "response", ylab=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'), xlab = "Distance to MPA (km)")
+# visreg(m4,  main="B.", xvar = "lat", partial = FALSE, scale = "response", ylab=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'), xlab = "Latitude (°)") 
+# visreg(m4,  main="C.", xvar = "moveInd", gg = FALSE, partial = FALSE, scale = "response", ylab=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'), xlab = "Movement Index (%)") 
+# visreg(m4,  main="D.", xvar = "NPP", gg = FALSE, partial = FALSE, scale = "response", ylab=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'), xlab = parse(text='NPP~(nmolC~m^-2*~s^-1)'))
+#dev.copy2pdf(file = "Normal.pdf", paper = "A4r")
+
+ggDist <- visreg(m4, xvar = "distance", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0, 0.035)) +
+  labs(x="Distance to MPA (km)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+ggNPP <- visreg(m4, xvar = "NPP", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0, 0.035)) +
+  labs(x= parse(text='NPP~(nmolC~m^-2*~s^-1)'), 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+ggMI <- visreg(m4, xvar = "moveInd", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0.001, 0.006)) +
+  labs(x= "Movement Index (Probability)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+ggLat <- visreg(m4, xvar = "lat", gg = TRUE, scale = "response", partial = FALSE) +
+  scale_y_continuous(limits = c(0.00025, 0.0023)) +
+  labs(x= "Latitude (°)", 
+       y=parse(text='Additional~Harvest~(mg~m^-2*~yr^-1)'),
+       colour = " ")+
+  theme_bw() +
+  theme(plot.title = element_text(size=12, colour = "black"),
+        axis.title = element_text(size = 12, colour = "black"),
+        axis.text.y = element_text(size = 12, colour = "black"),
+        axis.text.x = element_text(size = 12, colour = "black"))
+
+library(patchwork)
+pComb <- ((ggDist + ggNPP) / (ggMI + ggLat)) +
+  plot_annotation(tag_levels = "A") 
+
+ggsave(plot = pComb,
+       filename = file.path(Figure_path, paste0("combGLMProb.png")),
+       width = 10, height = 8, dpi = 400) 
+
+
+# I think m4 is probably best
+
+m5 <- gam(Harvest ~ s(moveInd) + s(distance) + s(lat), 
+          family = Gamma(link = "log"), dat)
+summary(m5)
+visreg(m5, xvar = "distance", gg = FALSE, partial = FALSE) 
+visreg(m5, xvar = "lat", gg = FALSE, partial = FALSE) 
+visreg(m5, xvar = "moveInd", gg = FALSE, partial = FALSE) 
+
+

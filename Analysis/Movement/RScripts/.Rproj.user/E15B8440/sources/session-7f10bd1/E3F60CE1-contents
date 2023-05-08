@@ -1,0 +1,56 @@
+library(sf)
+library(tidyverse)
+
+
+get_Boundary <- function(Limits){
+  
+  # Create function for creating polygon
+  polygon <- function(x){
+    x <- x %>%
+      as.matrix() %>%
+      list() %>%
+      st_polygon() %>%
+      st_sfc(crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") #%>%
+      #st_transform(crs = cCRS)
+  }
+  
+  Bndry <- tibble(x = seq(Limits["xmin"], Limits["xmax"], by = 1), y = Limits["ymin"]) %>%
+    bind_rows(tibble(x = Limits["xmax"], y = seq(Limits["ymin"], Limits["ymax"], by = 1))) %>%
+    bind_rows(tibble(x = seq(Limits["xmax"], Limits["xmin"], by = -1), y = Limits["ymax"])) %>%
+    bind_rows(tibble(x = Limits["xmin"], y = seq(Limits["ymax"], Limits["ymin"], by = -1))) %>%
+    polygon()
+  
+  return(Bndry)
+}
+
+Limits <- c(xmin = -180, xmax = 180, ymin = -90, ymax = 90)
+
+box <- get_Boundary(Limits)
+
+
+# First create planning units for the whole region
+grid <- st_make_grid(box,
+                    square = TRUE,
+                    cellsize = c(1,1),
+                    what = "polygons") %>%
+  st_as_sf()
+
+st_write(grid, dsn = "C:/Users/sandr/Documents/MME/MA/BOATS", layer = paste0("GridGlobal"), driver = "ESRI Shapefile", append = FALSE)
+
+##### FOR CENTROIDS
+# centroidsGrid <- st_centroid(grid) %>%
+#   dplyr::rename(centroids = x)
+# 
+# st_write(centroidsGrid, dsn = "C:/Users/sandr/Documents/MME/MA/BOATS", layer = paste0("CentroidsGrid"), driver = "ESRI Shapefile", append = FALSE)
+
+#get all land masses to not release drifters on land 
+#(taken from BOATS:Already centroids of the grid cells, so take those)
+TracerStartLocation <- read_csv("MME/MA/BOATS/maskGlobal.csv", 
+                col_names = c("lon", "lat", "mask")) %>%
+  dplyr::mutate(lon = lon-180) %>%
+  dplyr::filter(mask == 0) %>%
+  dplyr::select(lat, lon) %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+st_write(TracerStartLocation, dsn = "C:/Users/sandr/Documents/MME/MA/BOATS", layer = paste0("TracerStartLocation"), driver = "ESRI Shapefile", append = FALSE)
+

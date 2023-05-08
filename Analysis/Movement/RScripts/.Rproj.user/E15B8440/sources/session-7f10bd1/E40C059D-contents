@@ -1,0 +1,53 @@
+library(tidyverse)
+library(sf)
+#use number 32 (Agulhas) and 41 (East Central Australian Shelf)
+
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+Figure_path <- "../Figures"
+Data_path <- "../Data"
+
+MoveInd <- read_csv(file.path(Data_path, "/LarvExp/MoveInd.csv"), 
+                    col_names = c("lon", "lat", "moveInd"))%>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) #%>%
+  #dplyr::filter(lat > (-50), lat < 50)
+
+LarvExp <- read_csv(file.path(Data_path, "/LarvExp/LarvExp.csv"), #rerun and use non .* surf data
+                    col_names = c("lon", "lat", "larvExp"))%>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) 
+
+expMove <- merge(MoveInd, LarvExp, by=c("lon","lat")) #%>%
+ #dplyr::filter(larvExp > 0) %>%
+#  dplyr::filter(larvExp < 100)
+  #dplyr::select(-lon, -lat)
+
+ggplot(expMove, aes(x = moveInd, y = larvExp)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+
+
+############
+#Distance
+BOATSCheapestDist <- BOATSsfTest %>%
+  mutate(lon = unlist(map(.data$geometry,1)),
+         lat = unlist(map(.data$geometry,2))) %>%
+  sf::st_drop_geometry()
+
+expDist <- merge(BOATSCheapestDist, LarvExp, by=c("lon","lat")) %>%
+  dplyr::filter(larvExp > 0.3)
+
+plot(expDist$distance, expDist$larvExp)
+
+ggplot(expDist, aes(x = distance, y = larvExp)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+
+expDistsf <- merge(BOATSCheapestDist, LarvExp, by=c("lon","lat")) %>%
+  dplyr::filter(larvExp > 0.3, larvExp < 100)%>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) 
+
+ggplot(data = expDistsf) +
+  geom_sf(aes(color = larvExp), size = 1)
+  

@@ -1,0 +1,24 @@
+{
+    "id": "90A22F46",
+    "path": "~/Github/ThesisSandra/Analysis/Movement/RScripts/AnalysisBOATSoutput/GLM/DistToMPA.R",
+    "project_path": "AnalysisBOATSoutput/GLM/DistToMPA.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1683557979034.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1683462469,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1683462469,
+    "read_only": false,
+    "read_only_alternatives": []
+}

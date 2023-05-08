@@ -1,0 +1,174 @@
+library(sf)
+library(tidyverse)
+library(tidync)
+library(ncdf4)
+library(lubridate)
+
+###### Set paths ######
+Data_path <- "../Data"
+Figure_path <- "../Figures"
+ParcelsOut <- file.path(Data_path, "dfParcelsAghulasMonthly.nc")#"dfParcelsJapan.csv")#"dfParcelsPhilippines.csv")#"dfParcelsAghulas.csv")#"dfParcelsJapan.csv")##"dfTestProb.csv")
+BoatsPath <- file.path(Data_path, "maskGlobal.csv")#"oceanCellsBOATS.csv") #dont use just ocean cells, filter the cells later (takes longer though?)
+
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+#read .zarr file --> so far doesnt give traj or obs
+#data_path <- "C:/Users/sandr/Documents/Github/ThesisSandra/Analysis/Movement/Notebooks/ParcelsOutput"
+#test1 <- stars::read_mdim(file.path(data_path, "HighCurrentAghulasMonthly.zarr"))
+
+###### Functions #########
+convert_time <- function(particles, particles.info) { #Function from Dan Hewitt
+  
+  # particles is the actual data
+  # particles.info is the link to the netcdf
+  
+  # extract the time.origin
+  time.origin <- ymd(str_sub(particles.info$var$time$units, 15, 24))
+  
+  # convert time to a readable format (i.e. not in seconds since...)
+  particles <- particles %>%
+    mutate(date = time.origin + duration(time, units = "seconds"))
+}
+
+
+get_Indices <- function(BOATSCentroid, BOATSdf) { #BOATSCentroid is index number
+  #dont need to account for indexing >74.9 or <-75 bc no prob of going there anyway
+  
+  currBOATS <- BOATSdf[BOATSCentroid,] %>% dplyr::select(-ind)
+  
+  cellN <- currBOATS %>% dplyr::mutate(lat = lat + 1)
+  cellS <- currBOATS %>% dplyr::mutate(lat = lat - 1)
+  if (currBOATS$lon == 359.5 ) { 
+    cellW <- currBOATS %>% dplyr::mutate(lon = lon - 1)
+    cellE <- currBOATS %>% dplyr::mutate(lon = 0.5)
+    cellNW <- cellN %>% dplyr::mutate(lon = lon - 1) 
+    cellNE <- cellN %>% dplyr::mutate(lon = 0.5)
+    cellSW <- cellS %>% dplyr::mutate(lon = lon - 1)
+    cellSE <- cellS %>% dplyr::mutate(lon = 0.5)
+  } else if (currBOATS$lon == 0.5 ){
+    cellW <- currBOATS %>% dplyr::mutate(lon = 359.5)
+    cellE <- currBOATS %>% dplyr::mutate(lon = lon + 1)
+    cellNW <- cellN %>% dplyr::mutate(lon = 359.5) 
+    cellNE <- cellN %>% dplyr::mutate(lon = lon + 1)
+    cellSW <- cellS %>% dplyr::mutate(lon = 359.5)
+    cellSE <- cellS %>% dplyr::mutate(lon = lon + 1)
+  } else {
+    cellW <- currBOATS %>% dplyr::mutate(lon = lon - 1)
+    cellE <- currBOATS %>% dplyr::mutate(lon = lon + 1)
+    cellNW <- cellN %>% dplyr::mutate(lon = lon - 1) 
+    cellNE <- cellN %>% dplyr::mutate(lon = lon + 1)
+    cellSW <- cellS %>% dplyr::mutate(lon = lon - 1)
+    cellSE <- cellS %>% dplyr::mutate(lon = lon + 1)
+  }
+  
+  
+  neighbours <- list(cellN, cellS, cellW, cellE, cellNW, cellNE, cellSW, cellSE)
+  
+  listNeigh <- list(BOATSCentroid)
+  for (i in 1:length(neighbours)) {
+    neighInd <- which((BOATSdf$lon == neighbours[[i]]$lon) & (BOATSdf$lat == neighbours[[i]]$lat))[1]
+    listNeigh <- append(listNeigh, neighInd)
+  }
+  return(listNeigh)
+}
+
+create_ProbMatrix <- function(BOATSdf, BOATSsf, parcelsData, whichMonth) {
+  #input
+  # BOATSdf: df of all BOATS centroids (used for)
+  # BOATSsf: sf object of BOATSdf to do spatial analysis
+  # parcelsData: Particle Tracking data
+  # whichMonth: The month the created matrix is giving probabilities for based on the release times of particles
+  
+  #output
+  # writes monthly probability Matrix
+  
+  #get start and end particle centroid BOATS
+  startParticles <- parcelsData %>%
+    dplyr::filter(obs == 0, Month == whichMonth) %>%
+    dplyr::select(lon, lat)
+  
+  StartLoc <- startParticles %>%
+    sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+  
+  endParticles <- parcelsData %>%
+    dplyr::filter(obs == 24, Month == whichMonth) %>% #end point should never be in a different month because we release in the middle of each month and dont track for that long
+    dplyr::select(lon, lat)
+  
+  #still: sanity check
+  if (nrow(startParticles) != nrow(endParticles)) {
+    print("Particles don't end in same month as they start. Check PT data.")
+  }
+  
+  StartCentr <- sf::st_nearest_feature(StartLoc, BOATSsf) %>% data.frame() %>% dplyr::rename(Start = ".")
+  #get the neighbour information for each centroid
+  uniqueStartCentr <- sort(unique(StartCentr$Start))
+  
+  #TotalDF <- data.frame() #delete later, only to get an idea how many we ususally divide by
+  LonLatDf <- data.frame()
+  ProbsDf <- data.frame()
+  for (i in 1:length(uniqueStartCentr)) { #length(uniqueStartCentr)
+    MoveInd <- get_Indices(uniqueStartCentr[i], BOATSdf)
+    
+    LonLatDf <- rbind(LonLatDf, data.frame(st_coordinates(BOATSsf[uniqueStartCentr[i],])))
+    BOATSReduced <- BOATSsf[unlist(MoveInd), ]
+    
+    indStart <- which(StartCentr$Start %in% uniqueStartCentr[i])
+    
+    EndLoc <- endParticles[indStart,] %>%
+      sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+    
+    EndCentr <- sf::st_nearest_feature(EndLoc, BOATSReduced) %>% data.frame() %>% dplyr::rename(End = ".")
+    
+    countWhereTo <- as.data.frame(table(EndCentr))
+    
+    Total <- sum(countWhereTo$Freq)
+    #TotalDF <- rbind(TotalDF, data.frame(Total))
+    
+    probs <- numeric(9)
+    for (j in 1:length(MoveInd)){ #length(testInd)
+      if (j %in% countWhereTo$End) {
+        dirNow <- match(j, countWhereTo$End)
+        probs[j] <- (countWhereTo[dirNow,]$Freq)/Total
+      } else {
+        probs <- probs
+      }
+      
+    }
+    ProbsDf <- rbind(ProbsDf, as.data.frame(t(probs)))
+  }
+  
+  names(ProbsDf) <- c("Stay", "N", "S", "W", "E", "NW", "NE", "SW", "SE")
+  ProbsDf <- cbind(ProbsDf, LonLatDf) %>%
+    dplyr::rename(lon = X, lat = Y)
+  
+  if (whichMonth < 10){ #easiest way to ensure right order in MATLAB
+    currentMonth <- paste0("0", whichMonth)
+  } else {
+    currentMonth <- whichMonth
+  }
+  
+  write.csv(ProbsDf, file.path(Data_path, paste0("ProbMatrixTest", currentMonth, ".csv")), row.names=FALSE)
+  
+  return(ProbsDf) #for now, can be removed later when function working
+}
+
+##### Load Data #####
+BOATSdf <-  read_csv(BoatsPath, col_names = c("lon", "lat", "ind")) %>%
+  dplyr::filter((lat <=75)&(lat >(-75)))
+
+BOATSsf <- BOATSdf %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) 
+
+particles.info <- nc_open(ParcelsOut)
+
+parcelsData <- hyper_tibble(ParcelsOut)%>% 
+  convert_time(particles.info) %>%
+  dplyr::mutate(Month = month(as.POSIXlt(.data$date, format="%Y-%m-%d")))  #to select by month later 
+
+##### Calculate Prob Matrices ######
+uniqueMonths <- na.omit(unique(parcelsData$Month))
+
+for (i in 1:length(uniqueMonths)) { #length(uniqueMonths)
+  ProbMat <- create_ProbMatrix(BOATSdf, BOATSsf, parcelsData, uniqueMonths[i])
+  print(paste0("Creating matrix for month ", uniqueMonths[i]))
+}

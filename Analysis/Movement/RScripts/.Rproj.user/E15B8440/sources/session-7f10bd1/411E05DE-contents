@@ -1,0 +1,72 @@
+Limits <- c(xmin = -180, xmax = 180, ymin = -75, ymax = 74)
+
+box <- get_Boundary(Limits)
+
+# First create planning units for the whole region
+grid <- st_make_grid(box,
+                     square = TRUE,
+                     cellsize = c(1,1),
+                     what = "polygons") %>%
+  st_as_sf() %>%
+  dplyr::rename(geometry = x) %>%
+  st_make_valid()
+# 
+BOATSCentr2 <- read_csv(BoatsPath, 
+                           col_names = c("lon", "lat", "ind")) %>%
+  dplyr::filter((lat <74)&(lat >(-75))) %>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon <= 180 ~ lon)) %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = cCRS) 
+
+
+maskBoats2 <- lengths(st_intersects(grid, BOATSCentr2)) > 0
+
+
+gridBOATS2 <- grid %>%
+  mutate(mask = case_when(maskBoats2 ~ 1,
+                          !maskBoats2 ~ 0)) %>%
+  st_as_sf() %>%
+  st_make_valid()
+
+
+ggBefore <- ggplot2::ggplot() +
+  ggplot2::geom_sf(data = gridBOATS2, ggplot2::aes(fill = mask), colour = NA) +
+  theme_bw()
+
+ggsave(plot = ggBefore,
+       filename = file.path(Figure_path, paste0("NAsBOATSOceanBefore.png")),
+       width = 8, height = 6, dpi = 200)
+
+
+
+
+
+
+
+################ 
+BOATSCentrNew2 <- read_csv(BoatsPath, 
+                       col_names = c("lon", "lat", "ind")) %>%
+  dplyr::filter((lat <74)&(lat >(-75))) %>%
+  dplyr::filter(!(row.names(BOATSCentr) %in% NAthreshold$Var1)) %>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon <= 180 ~ lon)) %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = cCRS) 
+
+
+maskBoatsNew2 <- lengths(st_intersects(grid, BOATSCentrNew2)) > 0
+
+
+gridBOATSNew2 <- grid %>%
+  mutate(mask = case_when(maskBoatsNew2 ~ 1,
+                          !maskBoatsNew2 ~ 0)) %>%
+  st_as_sf() %>%
+  st_make_valid()
+
+
+ggAfter <- ggplot2::ggplot() +
+                ggplot2::geom_sf(data = gridBOATSNew2, ggplot2::aes(fill = mask), colour = NA) +
+  theme_bw()
+
+ggsave(plot = ggAfter,
+       filename = file.path(Figure_path, paste0("NAsBOATSOceanAfter30.png")),
+       width = 8, height = 6, dpi = 200)

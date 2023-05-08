@@ -1,0 +1,68 @@
+library(tidyverse)
+library(sf)
+#use number 32 (Agulhas) and 41 (East Central Australian Shelf)
+
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+sauDat30 <- read_csv("~/Github/ThesisSandra/Analysis/Movement/Data/SAU/SAU LME 30 v50-0.csv") %>%
+  dplyr::select(area_name, year, tonnes) %>% #, landed_value
+  na.omit() %>%
+  group_by(year) %>% 
+  summarise(tonnes_year=sum(tonnes),
+            .groups = 'drop')
+
+
+ggplot(data=sauDat30, aes(x=year, y=tonnes_year, group=1)) +
+  geom_line()
+
+
+
+sauDat41 <- read_csv("~/Github/ThesisSandra/Analysis/Movement/Data/SAU/SAU LME 41 v50-0.csv") %>%
+  dplyr::select(area_name, year, tonnes) %>% #, landed_value
+  na.omit() %>%
+  group_by(year) %>% 
+  summarise(tonnes_year=sum(tonnes),
+            .groups = 'drop')
+
+
+ggplot(data=sauDat41, aes(x=year, y=tonnes_year, group=1)) +
+  geom_line()
+
+
+############## 
+library(mregions)
+lmes <- mregions::mr_shp(key = "MarineRegions:lme") %>%
+  sf::st_as_sf(crs = LatLon) 
+
+BOATSLMEm1 <- read_csv("~/Github/ThesisSandra/Analysis/Movement/Data/SAU/BOATSLMEHarvestm1.csv", 
+                     col_names = c("lon", "lat", "harvest", "year")) %>%
+  na.omit() %>%
+  dplyr::filter(lat < 0) %>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) 
+
+#ggplot() +geom_sf(data = BOATSLME)
+
+##
+agulhas <- lmes %>%
+  dplyr::filter(lme_name == "Agulhas Current")
+
+BOATSAgulhas <- st_intersection(BOATSLMEm1, agulhas) %>%
+  dplyr::select(harvest, year) 
+
+# test <- BOATSAgulhas %>%
+#   dplyr::filter(year == 1)
+# 
+# ggplot(data = test) +
+#   geom_sf(aes(color = harvest), size = 2)
+
+
+sumBOATSAg <- BOATSAgulhas %>%
+  group_by(year) %>% 
+  summarise(tonnes_year=sum(harvest),
+            .groups = 'drop') %>%
+  dplyr::filter(year < 218 & year > 148)
+
+ggplot(data=sumBOATSAg, aes(x=year, y=tonnes_year, group=1)) +
+  geom_line()

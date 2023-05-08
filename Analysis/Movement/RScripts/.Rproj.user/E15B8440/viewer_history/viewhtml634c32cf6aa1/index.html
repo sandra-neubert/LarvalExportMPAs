@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<style>body{background-color:white;}</style>
+<script src="lib/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="lib/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="lib/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="lib/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="lib/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="lib/kePrint-0.0.1/kePrint.js"></script>
+<link href="lib/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+</head>
+<body>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> LME </th>
+   <th style="text-align:left;"> MeanTotalEggChange </th>
+   <th style="text-align:left;"> MeanPercentageEggChange </th>
+   <th style="text-align:left;"> MeanTotalFishChange </th>
+   <th style="text-align:left;"> MeanPercentageFishChange </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Baltic Sea </td>
+   <td style="text-align:left;"> -9e-07 (2.4e-06) </td>
+   <td style="text-align:left;"> -2.78 (5.58) </td>
+   <td style="text-align:left;"> -0.268 (0.488) </td>
+   <td style="text-align:left;"> -1.1 (2.36) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Sea of Okhotsk </td>
+   <td style="text-align:left;"> -2e-07 (1.5e-06) </td>
+   <td style="text-align:left;"> -0.25 (8.34) </td>
+   <td style="text-align:left;"> -0.052 (0.306) </td>
+   <td style="text-align:left;"> -0.23 (3.04) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> North Sea </td>
+   <td style="text-align:left;"> -1.2e-06 (4.3e-06) </td>
+   <td style="text-align:left;"> -1.12 (7.47) </td>
+   <td style="text-align:left;"> -0.124 (0.355) </td>
+   <td style="text-align:left;"> -0.58 (2.69) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gulf of Alaska </td>
+   <td style="text-align:left;"> -2e-07 (1.5e-06) </td>
+   <td style="text-align:left;"> -1.15 (10.28) </td>
+   <td style="text-align:left;"> -0.058 (0.191) </td>
+   <td style="text-align:left;"> -0.86 (3.58) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Labrador - Newfoundland </td>
+   <td style="text-align:left;"> -3e-07 (1.2e-06) </td>
+   <td style="text-align:left;"> -4.33 (13.72) </td>
+   <td style="text-align:left;"> -0.079 (0.237) </td>
+   <td style="text-align:left;"> -1.87 (5.01) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Celtic-Biscay Shelf </td>
+   <td style="text-align:left;"> -5e-07 (2.1e-06) </td>
+   <td style="text-align:left;"> -1.36 (3.79) </td>
+   <td style="text-align:left;"> -0.054 (0.163) </td>
+   <td style="text-align:left;"> -0.49 (1.31) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Sea of Japan </td>
+   <td style="text-align:left;"> -4e-07 (1.1e-06) </td>
+   <td style="text-align:left;"> -2.37 (4.59) </td>
+   <td style="text-align:left;"> -0.051 (0.09) </td>
+   <td style="text-align:left;"> -0.87 (1.45) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Oyashio Current </td>
+   <td style="text-align:left;"> -5e-07 (1.5e-06) </td>
+   <td style="text-align:left;"> -2.81 (9.67) </td>
+   <td style="text-align:left;"> -0.076 (0.226) </td>
+   <td style="text-align:left;"> -1.11 (3.04) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Scotian Shelf </td>
+   <td style="text-align:left;"> -6e-07 (3.2e-06) </td>
+   <td style="text-align:left;"> 0.12 (7.01) </td>
+   <td style="text-align:left;"> -0.115 (0.447) </td>
+   <td style="text-align:left;"> -0.12 (1.89) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> California Current </td>
+   <td style="text-align:left;"> 0e+00 (8e-07) </td>
+   <td style="text-align:left;"> -0.36 (3.32) </td>
+   <td style="text-align:left;"> -0.003 (0.058) </td>
+   <td style="text-align:left;"> -0.12 (0.91) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Northeast U.S. Continental Shelf </td>
+   <td style="text-align:left;"> -4e-06 (1.62e-05) </td>
+   <td style="text-align:left;"> -1.98 (6.82) </td>
+   <td style="text-align:left;"> -0.226 (0.614) </td>
+   <td style="text-align:left;"> -0.78 (2.15) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Mediterranean Sea </td>
+   <td style="text-align:left;"> -1e-07 (1e-06) </td>
+   <td style="text-align:left;"> -1.1 (4.31) </td>
+   <td style="text-align:left;"> -0.006 (0.034) </td>
+   <td style="text-align:left;"> -0.4 (1.15) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Iberian Coastal </td>
+   <td style="text-align:left;"> 0e+00 (2e-07) </td>
+   <td style="text-align:left;"> 0.15 (1.72) </td>
+   <td style="text-align:left;"> 0.001 (0.013) </td>
+   <td style="text-align:left;"> 0.05 (0.56) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Kuroshio Current </td>
+   <td style="text-align:left;"> -3e-07 (1.6e-06) </td>
+   <td style="text-align:left;"> 1.58 (17.57) </td>
+   <td style="text-align:left;"> -0.031 (0.092) </td>
+   <td style="text-align:left;"> -0.76 (5.44) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yellow Sea </td>
+   <td style="text-align:left;"> -9e-07 (6.3e-06) </td>
+   <td style="text-align:left;"> 0.58 (6.15) </td>
+   <td style="text-align:left;"> -0.088 (0.385) </td>
+   <td style="text-align:left;"> 0.03 (1.7) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Canary Current </td>
+   <td style="text-align:left;"> -5e-07 (6.1e-06) </td>
+   <td style="text-align:left;"> 1.02 (8.23) </td>
+   <td style="text-align:left;"> -0.041 (0.261) </td>
+   <td style="text-align:left;"> 0.11 (1.97) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> East China Sea </td>
+   <td style="text-align:left;"> -1.2e-06 (5.8e-06) </td>
+   <td style="text-align:left;"> -1.97 (13.13) </td>
+   <td style="text-align:left;"> -0.06 (0.238) </td>
+   <td style="text-align:left;"> -1.25 (3.61) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Southeast U.S. Continental Shelf </td>
+   <td style="text-align:left;"> -1.2e-06 (4.1e-06) </td>
+   <td style="text-align:left;"> 4.27 (30.17) </td>
+   <td style="text-align:left;"> -0.051 (0.107) </td>
+   <td style="text-align:left;"> -1.31 (7.64) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gulf of California </td>
+   <td style="text-align:left;"> -5e-07 (5e-07) </td>
+   <td style="text-align:left;"> -3.01 (3.21) </td>
+   <td style="text-align:left;"> -0.027 (0.021) </td>
+   <td style="text-align:left;"> -0.99 (1.04) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gulf of Mexico </td>
+   <td style="text-align:left;"> -2e-07 (2.1e-06) </td>
+   <td style="text-align:left;"> -1.94 (11.2) </td>
+   <td style="text-align:left;"> -0.009 (0.059) </td>
+   <td style="text-align:left;"> -0.95 (3.45) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Arabian Sea </td>
+   <td style="text-align:left;"> -4e-07 (1.4e-06) </td>
+   <td style="text-align:left;"> -1.75 (5.24) </td>
+   <td style="text-align:left;"> -0.019 (0.052) </td>
+   <td style="text-align:left;"> -0.64 (1.71) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Red Sea </td>
+   <td style="text-align:left;"> -5e-07 (1.5e-06) </td>
+   <td style="text-align:left;"> -2.49 (2.31) </td>
+   <td style="text-align:left;"> -0.018 (0.039) </td>
+   <td style="text-align:left;"> -0.76 (0.69) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Insular Pacific-Hawaiian </td>
+   <td style="text-align:left;"> 0e+00 (1e-07) </td>
+   <td style="text-align:left;"> 0.48 (2.36) </td>
+   <td style="text-align:left;"> 0 (0.002) </td>
+   <td style="text-align:left;"> 0.1 (0.61) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Caribbean Sea </td>
+   <td style="text-align:left;"> -1e-07 (2.4e-06) </td>
+   <td style="text-align:left;"> 3.38 (28.02) </td>
+   <td style="text-align:left;"> -0.011 (0.066) </td>
+   <td style="text-align:left;"> -0.25 (4.31) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> South China Sea </td>
+   <td style="text-align:left;"> -7e-07 (4.7e-06) </td>
+   <td style="text-align:left;"> -3.15 (11.47) </td>
+   <td style="text-align:left;"> -0.02 (0.098) </td>
+   <td style="text-align:left;"> -1.55 (3.78) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Bay of Bengal </td>
+   <td style="text-align:left;"> -4e-07 (1.7e-06) </td>
+   <td style="text-align:left;"> -1.6 (7.83) </td>
+   <td style="text-align:left;"> -0.012 (0.039) </td>
+   <td style="text-align:left;"> -0.71 (2.26) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Pacific Central-American Coastal </td>
+   <td style="text-align:left;"> -7e-07 (1.8e-06) </td>
+   <td style="text-align:left;"> -2.47 (6.6) </td>
+   <td style="text-align:left;"> -0.028 (0.067) </td>
+   <td style="text-align:left;"> -0.91 (2.22) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Sulu-Celebes Sea </td>
+   <td style="text-align:left;"> -7e-07 (2.6e-06) </td>
+   <td style="text-align:left;"> -6.35 (24.07) </td>
+   <td style="text-align:left;"> -0.024 (0.068) </td>
+   <td style="text-align:left;"> -3.18 (5.06) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gulf of Thailand </td>
+   <td style="text-align:left;"> 2e-07 (2.1e-06) </td>
+   <td style="text-align:left;"> 5.38 (15.52) </td>
+   <td style="text-align:left;"> 0.004 (0.04) </td>
+   <td style="text-align:left;"> 1.03 (2.87) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> North Brazil Shelf </td>
+   <td style="text-align:left;"> -6.8e-06 (4.41e-05) </td>
+   <td style="text-align:left;"> -14.81 (17.7) </td>
+   <td style="text-align:left;"> -0.372 (1.195) </td>
+   <td style="text-align:left;"> -6.84 (7.79) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Guinea Current </td>
+   <td style="text-align:left;"> -5e-07 (3.8e-06) </td>
+   <td style="text-align:left;"> -0.72 (5.33) </td>
+   <td style="text-align:left;"> -0.021 (0.126) </td>
+   <td style="text-align:left;"> -0.35 (1.64) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Somali Coastal Current </td>
+   <td style="text-align:left;"> -1e-06 (1.5e-06) </td>
+   <td style="text-align:left;"> -9.05 (11.95) </td>
+   <td style="text-align:left;"> -0.041 (0.052) </td>
+   <td style="text-align:left;"> -3.52 (4.1) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Indonesian Sea </td>
+   <td style="text-align:left;"> -6e-07 (3.3e-06) </td>
+   <td style="text-align:left;"> -2.98 (9.81) </td>
+   <td style="text-align:left;"> -0.022 (0.091) </td>
+   <td style="text-align:left;"> -1.25 (3.32) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> East Brazil Shelf </td>
+   <td style="text-align:left;"> -5e-07 (2.4e-06) </td>
+   <td style="text-align:left;"> -3.28 (10.8) </td>
+   <td style="text-align:left;"> -0.017 (0.086) </td>
+   <td style="text-align:left;"> -1.22 (2.98) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Humboldt Current </td>
+   <td style="text-align:left;"> -5e-07 (2.4e-06) </td>
+   <td style="text-align:left;"> -1.38 (6.46) </td>
+   <td style="text-align:left;"> -0.036 (0.127) </td>
+   <td style="text-align:left;"> -0.51 (2.15) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Benguela Current </td>
+   <td style="text-align:left;"> -9e-07 (1.27e-05) </td>
+   <td style="text-align:left;"> 5.33 (14.23) </td>
+   <td style="text-align:left;"> -0.124 (0.719) </td>
+   <td style="text-align:left;"> 0.98 (3.34) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> North Australian Shelf </td>
+   <td style="text-align:left;"> -2e-07 (9e-07) </td>
+   <td style="text-align:left;"> -0.64 (3.91) </td>
+   <td style="text-align:left;"> -0.005 (0.02) </td>
+   <td style="text-align:left;"> -0.24 (1.09) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Northeast Australian Shelf </td>
+   <td style="text-align:left;"> -1e-07 (1.2e-06) </td>
+   <td style="text-align:left;"> 4.57 (19.27) </td>
+   <td style="text-align:left;"> -0.005 (0.027) </td>
+   <td style="text-align:left;"> 0.49 (3.35) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Agulhas Current </td>
+   <td style="text-align:left;"> -5e-07 (2.5e-06) </td>
+   <td style="text-align:left;"> -6.08 (15.75) </td>
+   <td style="text-align:left;"> -0.031 (0.168) </td>
+   <td style="text-align:left;"> -2.59 (5.38) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Northwest Australian Shelf </td>
+   <td style="text-align:left;"> -2e-07 (5e-07) </td>
+   <td style="text-align:left;"> -2.26 (3.23) </td>
+   <td style="text-align:left;"> -0.005 (0.012) </td>
+   <td style="text-align:left;"> -0.71 (0.93) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> East Central Australian Shelf </td>
+   <td style="text-align:left;"> -4e-07 (1e-06) </td>
+   <td style="text-align:left;"> -4.6 (14.43) </td>
+   <td style="text-align:left;"> -0.019 (0.035) </td>
+   <td style="text-align:left;"> -2.23 (4.39) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> South Brazil Shelf </td>
+   <td style="text-align:left;"> -4.8e-06 (2.52e-05) </td>
+   <td style="text-align:left;"> -9.75 (8.24) </td>
+   <td style="text-align:left;"> -0.246 (1.21) </td>
+   <td style="text-align:left;"> -3.6 (3.28) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> New Zealand Shelf </td>
+   <td style="text-align:left;"> -1e-07 (4e-07) </td>
+   <td style="text-align:left;"> -1.33 (4.55) </td>
+   <td style="text-align:left;"> -0.009 (0.026) </td>
+   <td style="text-align:left;"> -0.48 (1.44) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Patagonian Shelf </td>
+   <td style="text-align:left;"> -7e-07 (4.5e-06) </td>
+   <td style="text-align:left;"> -0.25 (9.41) </td>
+   <td style="text-align:left;"> -0.063 (0.274) </td>
+   <td style="text-align:left;"> -0.17 (2.99) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Southeast Australian Shelf </td>
+   <td style="text-align:left;"> -1e-07 (6e-07) </td>
+   <td style="text-align:left;"> -1.6 (6.66) </td>
+   <td style="text-align:left;"> -0.009 (0.029) </td>
+   <td style="text-align:left;"> -0.67 (2.23) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Antarctica </td>
+   <td style="text-align:left;"> 0e+00 (0e+00) </td>
+   <td style="text-align:left;"> 19 (145.79) </td>
+   <td style="text-align:left;"> 0 (0.005) </td>
+   <td style="text-align:left;"> 0.75 (12.87) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> South West Australian Shelf </td>
+   <td style="text-align:left;"> -1e-07 (3e-07) </td>
+   <td style="text-align:left;"> -1.57 (4.21) </td>
+   <td style="text-align:left;"> -0.005 (0.012) </td>
+   <td style="text-align:left;"> -0.52 (1.19) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> West Central Australian Shelf </td>
+   <td style="text-align:left;"> -1e-07 (4e-07) </td>
+   <td style="text-align:left;"> -0.8 (5.63) </td>
+   <td style="text-align:left;"> -0.004 (0.012) </td>
+   <td style="text-align:left;"> -0.38 (1.41) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Faroe Plateau </td>
+   <td style="text-align:left;"> 0e+00 (2e-07) </td>
+   <td style="text-align:left;"> -0.99 (5.73) </td>
+   <td style="text-align:left;"> -0.008 (0.037) </td>
+   <td style="text-align:left;"> -0.55 (2.63) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Iceland Shelf and Sea </td>
+   <td style="text-align:left;"> 0e+00 (2e-07) </td>
+   <td style="text-align:left;"> -1.55 (5.54) </td>
+   <td style="text-align:left;"> -0.015 (0.045) </td>
+   <td style="text-align:left;"> -0.78 (2.68) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Greenland Sea </td>
+   <td style="text-align:left;"> 0e+00 (1e-07) </td>
+   <td style="text-align:left;"> 3.5 (18.41) </td>
+   <td style="text-align:left;"> -0.003 (0.04) </td>
+   <td style="text-align:left;"> 1.95 (11.07) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Norwegian Sea </td>
+   <td style="text-align:left;"> -1e-07 (3e-07) </td>
+   <td style="text-align:left;"> -2.34 (9.02) </td>
+   <td style="text-align:left;"> -0.024 (0.07) </td>
+   <td style="text-align:left;"> -1.18 (4.99) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Barents Sea </td>
+   <td style="text-align:left;"> -1e-07 (4e-07) </td>
+   <td style="text-align:left;"> -0.66 (17.34) </td>
+   <td style="text-align:left;"> -0.033 (0.135) </td>
+   <td style="text-align:left;"> -0.29 (11.99) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Kara Sea </td>
+   <td style="text-align:left;"> 0e+00 (1e-07) </td>
+   <td style="text-align:left;"> -3.22 (11.96) </td>
+   <td style="text-align:left;"> -0.022 (0.06) </td>
+   <td style="text-align:left;"> -2.28 (7.9) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Laptev Sea </td>
+   <td style="text-align:left;"> 0e+00 (0e+00) </td>
+   <td style="text-align:left;"> -1.8 (11.5) </td>
+   <td style="text-align:left;"> -0.012 (0.034) </td>
+   <td style="text-align:left;"> -1.65 (6.43) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> East Siberian Sea </td>
+   <td style="text-align:left;"> 0e+00 (1e-07) </td>
+   <td style="text-align:left;"> 2.97 (9.81) </td>
+   <td style="text-align:left;"> -0.004 (0.049) </td>
+   <td style="text-align:left;"> 1.79 (6.26) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> West Bering Sea </td>
+   <td style="text-align:left;"> -3e-07 (1.1e-06) </td>
+   <td style="text-align:left;"> -3.77 (8.01) </td>
+   <td style="text-align:left;"> -0.084 (0.239) </td>
+   <td style="text-align:left;"> -1.67 (3.3) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Aleutian Islands </td>
+   <td style="text-align:left;"> 4e-07 (7e-07) </td>
+   <td style="text-align:left;"> 3.57 (5.74) </td>
+   <td style="text-align:left;"> 0.047 (0.086) </td>
+   <td style="text-align:left;"> 1.04 (1.71) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> East Bering Sea </td>
+   <td style="text-align:left;"> -1e-07 (9e-07) </td>
+   <td style="text-align:left;"> 0.05 (5.87) </td>
+   <td style="text-align:left;"> -0.018 (0.135) </td>
+   <td style="text-align:left;"> -0.05 (2.1) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Canadian Eastern Arctic - West Greenland </td>
+   <td style="text-align:left;"> 0e+00 (2e-07) </td>
+   <td style="text-align:left;"> 6.92 (30.53) </td>
+   <td style="text-align:left;"> -0.011 (0.076) </td>
+   <td style="text-align:left;"> 3.28 (17.43) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Hudson Bay Complex </td>
+   <td style="text-align:left;"> -1e-07 (6e-07) </td>
+   <td style="text-align:left;"> 8.34 (37.01) </td>
+   <td style="text-align:left;"> -0.038 (0.205) </td>
+   <td style="text-align:left;"> 3.25 (16.12) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Beaufort Sea </td>
+   <td style="text-align:left;"> 0e+00 (0e+00) </td>
+   <td style="text-align:left;"> -0.95 (12.31) </td>
+   <td style="text-align:left;"> -0.007 (0.034) </td>
+   <td style="text-align:left;"> -0.57 (7.48) </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Northern Bering - Chukchi Seas </td>
+   <td style="text-align:left;"> -1e-07 (5e-07) </td>
+   <td style="text-align:left;"> -0.11 (8.37) </td>
+   <td style="text-align:left;"> -0.027 (0.172) </td>
+   <td style="text-align:left;"> 0.13 (4.42) </td>
+  </tr>
+</tbody>
+</table> <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax: {inlineMath: [["$","$"]]}})</script><script async src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

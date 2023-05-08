@@ -1,0 +1,83 @@
+#Sandra Neubert
+#Prepare data for GLM to have a single input file
+#use this data in GeneralisedLinearModel.R
+
+library(tidyverse)
+library(sf)
+
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+Figure_path <- "../Figures"
+Data_path <- "../Data"
+
+mpa_scenarios <- read_csv("~/Github/ThesisSandra/Analysis/BOATS/sneubert-boats_v1/input/mpaWaldron/mpasWaldronNew.csv",
+                          col_names = c("Lon", "lat", "CurrentMPAs", "Cheapest_Half", 
+                                        "Cheapest_Full", "Top30_Half", "Top30_Full")) %>%
+  # dplyr::select(Lon, Lat, Top30_Full)%>%
+  dplyr::mutate(lon = case_when(Lon > 180 ~ Lon -360,
+                                Lon < 180 ~ Lon)) %>%
+  dplyr::filter((lat <=75)&(lat >(-75))) %>%
+  #sf::st_as_sf(coords = c("Lon", "Lat"), crs = LatLon) %>%
+  replace(is.na(.), 2) %>%
+  dplyr::select(lon, lat, Cheapest_Full) %>%
+  dplyr::rename(mpa = Cheapest_Full)
+
+MoveInd <- read_csv(file.path(Data_path, "/LarvExp/MoveInd.csv"), 
+                    col_names = c("lon", "lat", "moveInd"))%>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) %>%
+  dplyr::filter(moveInd < 1)
+
+LarvExp <- read_csv(file.path(Data_path, "/LarvExp/LarvExp.csv"), #rerun and use non .* surf data
+                    col_names = c("lon", "lat", "larvExp"))%>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) #%>%
+  #dplyr::filter(larvExp >= 0)
+
+LarvExp99th <- LarvExp %>%
+  dplyr::filter(larvExp < quantile(larvExp, 0.99, 'na.rm' = TRUE)) %>%
+  dplyr::rename(larvExp99th = larvExp)
+
+#Distance
+CheapestDist <- readRDS(file.path(Data_path, "DistToMPACheapest.rds")) %>%
+  mutate(lon = unlist(map(.data$geometry,1)),
+         lat = unlist(map(.data$geometry,2))) %>%
+  sf::st_drop_geometry()
+
+#npp and temp
+NPPTempMean <- read_csv(file.path(Data_path, "LarvExp", "NPPTempMean.csv"), 
+                       col_names = c("lon", "lat", "npp", "temp"))%>%
+  dplyr::mutate(lon = case_when(lon > 180 ~ lon -360,
+                                lon < 180 ~ lon)) #%>%
+#   sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+# 
+# ggplot(data = NPPTempMean) +
+#   geom_sf(aes(color = temp), size = 1.5)
+
+df_list <- list(LarvExp,LarvExp99th, MoveInd, CheapestDist, NPPTempMean, mpa_scenarios)
+
+#merge all data frames in list
+GLMData <- df_list %>% reduce(full_join, by=c("lon","lat"))%>%
+  dplyr::mutate(moveInd = case_when(mpa == 1 ~ NA,
+                                     mpa != 1 ~ moveInd),
+                distance = case_when(mpa == 1 ~ NA,
+                                    mpa != 1 ~ distance),
+                npp = case_when(mpa == 1 ~ NA,
+                                     mpa != 1 ~ npp),
+                temp = case_when(mpa == 1 ~ NA,
+                                     mpa != 1 ~ temp))%>%
+  dplyr::rename(additHarv = larvExp,
+                additHarv99th = larvExp99th) %>%
+  dplyr::mutate(additHarv = case_when(mpa == 1 ~ NA,
+                                    mpa != 1 ~ additHarv),
+                additHarv99th = case_when(mpa == 1 ~ NA,
+                                     mpa != 1 ~ additHarv99th)) %>%
+  dplyr::filter(!is.na(additHarv ))%>%
+ # dplyr::filter(distance > 0) %>% #on borders of MPAs
+  dplyr::select(-mpa) %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon)
+
+ggGLMDAt <- ggplot(data = GLMData) +
+            geom_sf(aes(color = additHarv99th), size = 1)
+
+saveRDS(GLMData, file.path(Data_path, "LarvExp", "GLMDataNoMPAs.rds"))

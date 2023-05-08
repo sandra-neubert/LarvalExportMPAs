@@ -1,0 +1,107 @@
+library(sf)
+library(tidyverse)
+library(units)
+#library(tidync)
+LatLon <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+Data_path <- "../Data"
+BoatsPath <- file.path(Data_path, "maskGlobal.csv")#"oceanCellsBOATS.csv") #dont use just ocean cells, filter the cells later (takes longer though?)
+
+mpa_scenarios <- read_csv("~/Github/ThesisSandra/Analysis/BOATS/sneubert-boats_v1/input/mpaWaldron/mpa_scenarios.csv") %>%
+  dplyr::select(Lon, Lat, Cheapest_Full)%>%
+  dplyr::mutate(Lon = case_when(Lon > 180 ~ Lon -360,
+                                Lon < 180 ~ Lon)) %>%
+  dplyr::filter((Lat <=0)&(Lat >(-70)))%>%#&(Lon <=170)&(Lon>90))%>%
+  sf::st_as_sf(coords = c("Lon", "Lat"), crs = LatLon) %>%
+  dplyr::filter(Cheapest_Full == 1)
+
+ggplot(data = mpa_scenarios) +
+  geom_sf()
+
+BOATSdf <-  read_csv(BoatsPath, col_names = c("lon", "lat", "ind")) %>%
+  dplyr::filter((lat <=75)&(lat >(-75)))
+
+BOATSsf <- BOATSdf %>%
+  dplyr::mutate(Lon = case_when(lon > 0 ~ lon -180 ,
+                                lon < 0 ~ lon +180) ) %>%
+  sf::st_as_sf(coords = c("Lon", "lat"), crs = LatLon) %>%
+  dplyr::filter(ind == 0)
+
+ggplot(data = BOATSsf) +
+  geom_sf()
+
+nearest <- sf::st_nearest_feature(BOATSsf, mpa_scenarios) #%>% 
+ # data.frame() %>% 
+ # dplyr::rename(End = ".")
+
+dist <- st_distance(BOATSsf, mpa_scenarios[nearest,], by_element=TRUE) %>%
+  data.frame() %>%
+  dplyr::rename(dist = ".") %>%
+  drop_units() %>%
+dplyr::mutate(dist = dist/1000)
+
+BOATSsfTest  <-BOATSsf %>%
+  dplyr::mutate(distance = unlist(dist)) %>%
+  dplyr::select(distance) %>%
+  st_as_sf()# %>%
+  #dplyr::filter(distance < 50)
+
+ggplot(data = BOATSsfTest) +
+  geom_sf(aes(color = distance), size = 1)
+
+
+  dplyr::filter((lat <=75)&(lat >(-75)))
+
+BOATSsf <- BOATSdf %>%
+  sf::st_as_sf(coords = c("lon", "lat"), crs = LatLon) %>%
+  dplyr::filter(ind == 0)
+
+ggplot(data = BOATSsf) +
+  geom_sf()
+
+nearest <- sf::st_nearest_feature(BOATSsf, mpa_scenarios) #%>% 
+ # data.frame() %>% 
+ # dplyr::rename(End = ".")
+
+dist <- st_distance(BOATSsf, mpa_scenarios[nearest,], by_element=TRUE) %>%
+  data.frame() %>%
+  dplyr::rename(dist = ".") %>%
+  drop_units() %>%
+dplyr::mutate(dist = dist/1000)
+
+BOATSsfTest  <-BOATSsf %>%
+  dplyr::mutate(distance = unlist(dist)) %>%
+  dplyr::select(distance) %>%
+  st_as_sf()# %>%
+  #dplyr::filter(distance < 50)
+
+ggplot(data = BOATSsfTest) +
+  geom_sf(aes(color = distance), size = 1)
+
+library(nngeo)
+testDist <- st_nn(BOATSsf, mpa_scenarios, k = 1, returnDist = T)
+
+test1 <- st_combine(mpa_scenarios) %>%
+  st_as_sf()
+
+ggplot(data = test1 ) +
+  geom_sf()
+
+ggplot2::ggplot() +
+  ggplot2::geom_sf(data = test1,  colour = NA)
+
+nearest <- sf::st_nearest_feature(BOATSsf, test1) #%>% 
+
+dist <- st_distance(BOATSsf, test1[nearest,], by_element=TRUE) %>%
+  data.frame() %>%
+  dplyr::rename(dist = ".") %>%
+  drop_units() %>%
+  dplyr::mutate(dist = dist/1000)
+
+BOATSsfTest  <-BOATSsf %>%
+  dplyr::mutate(distance = unlist(dist)) %>%
+  dplyr::select(distance) %>%
+  st_as_sf()
+
+
+ggplot(data = BOATSsfTest) +
+  geom_sf(aes(color = distance), size = 1)
