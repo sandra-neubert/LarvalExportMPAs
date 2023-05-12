@@ -44,9 +44,9 @@ gg1 <- ggplot() +
   theme_bw() +
   ylab("Egg biomass change (%)") +
   xlab("Large Marine Ecosystem") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1,size = 13, colour = "black"),
-        axis.title = element_text(size = 14, colour = "black"),
-        axis.text.y = element_text(size = 13, colour = "black"),
+  theme(axis.text.x = element_text(angle = 45, hjust = 1,size = 15, colour = "black"),
+        axis.title = element_text(size = 15, colour = "black"),
+        axis.text.y = element_text(size = 15, colour = "black"),
         plot.margin = margin(1, 1, 1, 1.5, "cm"))
 
 
@@ -57,9 +57,9 @@ gg2 <- ggplot() +
   theme_bw() +
   ylab("Fish biomass change (%)") +
   xlab("Large Marine Ecosystem") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1,size = 13, colour = "black"),
-        axis.title = element_text(size = 14, colour = "black"),
-        axis.text.y = element_text(size = 13, colour = "black"),
+  theme(axis.text.x = element_text(angle = 45, hjust = 1,size = 15, colour = "black"),
+        axis.title = element_text(size = 15, colour = "black"),
+        axis.text.y = element_text(size = 15, colour = "black"),
         plot.margin = margin(1, 1, 1, 1.5, "cm"))
 
 ggsave("PCE.pdf", gg1, width = 420, height = 297, units = "mm")
